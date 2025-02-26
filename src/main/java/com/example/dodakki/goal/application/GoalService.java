@@ -1,10 +1,6 @@
 package com.example.dodakki.goal.application;
 
-import com.example.dodakki.goal.application.dto.GoalAddRequest;
-import com.example.dodakki.goal.application.dto.GoalDateUpdateRequest;
-import com.example.dodakki.goal.application.dto.GoalResponse;
-import com.example.dodakki.goal.application.dto.GoalUpdateRequest;
-import com.example.dodakki.goal.application.dto.GoalUpdateStatusRequest;
+import com.example.dodakki.goal.application.dto.*;
 import com.example.dodakki.goal.domain.*;
 import com.example.dodakki.goal.domain.repository.*;
 import com.example.dodakki.goal.exception.*;
@@ -141,6 +137,108 @@ public class GoalService {
             .orElseGet(() -> goalDateRepository.save(new GoalDate(persistUser, request.getNewDate())));
 
         goalDateMapRepository.save(new GoalDateMap(goal, newGoalDate, goalDateMap.getAttainment()));
+    }
+
+    @Transactional
+    public void updateDominoGoalDate(User user, GoalDominoDateUpdateRequest request) {
+        User persistUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new UserException(UserExceptionType.NOT_FOUND_MEMBER));
+
+        Goal goal = goalRepository.findById(request.getGoalId())
+                .orElseThrow(() -> new GoalException(GoalExceptionType.NOT_FOUND_GOAL));
+
+        // 기존 날짜 찾기
+        GoalDate oldGoalDate = goalDateRepository.findByUserAndDate(persistUser, request.getOldDate())
+                .orElseThrow(() -> new GoalDateException(GoalDateExceptionType.NOT_FOUND_GOAL_DATE));
+
+        // 기존 날짜에 연결된 모든 GoalDateMap 찾기
+        List<GoalDateMap> goalDateMaps = goalDateMapRepository.findByGoalDate(oldGoalDate);
+
+        if (goalDateMaps.isEmpty()) {
+            throw new GoalDateMapException(GoalDateMapExceptionType.NOT_FOUND_GOAL_DATE_MAP);
+        }
+
+        // 새로운 날짜에 해당하는 GoalDate 찾기 또는 생성
+        GoalDate newGoalDate = goalDateRepository.findByUserAndDate(persistUser, request.getNewDate())
+                .orElseGet(() -> goalDateRepository.save(new GoalDate(persistUser, request.getNewDate())));
+
+        // 모든 연결된 목표 날짜 업데이트 (도미노 효과)
+        for (GoalDateMap goalDateMap : goalDateMaps) {
+            Goal currentGoal = goalDateMap.getGoal();
+
+            // 기존 날짜 매핑 삭제
+            goalDateMapRepository.delete(goalDateMap);
+
+            // 새 날짜에 대한 GoalDateMap 새로 저장
+            GoalDateMap newGoalDateMap = new GoalDateMap(currentGoal, newGoalDate, goalDateMap.getAttainment());
+            goalDateMapRepository.save(newGoalDateMap);
+        }
+    }
+
+    @Transactional
+    public void deleteFutureDominoGoals(User user, GoalDominoDeleteRequest request) {
+        User persistUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new UserException(UserExceptionType.NOT_FOUND_MEMBER));
+
+        Goal goal = goalRepository.findById(request.getGoalId())
+                .orElseThrow(() -> new GoalException(GoalExceptionType.NOT_FOUND_GOAL));
+
+        // 오늘 날짜 기준으로 목표 삭제 진행
+        LocalDate today = LocalDate.now();
+
+        // 해당 목표와 연결된 모든 GoalDateMap 가져오기
+        List<GoalDateMap> goalDateMaps = goalDateMapRepository.findByGoal(goal);
+
+        if (goalDateMaps.isEmpty()) {
+            throw new GoalDateMapException(GoalDateMapExceptionType.NOT_FOUND_GOAL_DATE_MAP);
+        }
+
+        // 오늘 이후 날짜만 필터링해서 삭제
+        for (GoalDateMap goalDateMap : goalDateMaps) {
+            if (goalDateMap.getGoalDate().getDate().isAfter(today)) {
+                goalDateMapRepository.delete(goalDateMap);
+            }
+        }
+    }
+
+    @Transactional
+    public void fullUpdateGoal(User user, GoalFullUpdateRequest request) {
+        User persistUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new UserException(UserExceptionType.NOT_FOUND_MEMBER));
+
+        ThirdGoal thirdGoal = thirdGoalRepository.findById(request.getThirdGoalId())
+                .orElseThrow(() -> new GoalException(GoalExceptionType.NOT_FOUND_GOAL));
+
+        Mandalart mandalart = mandalartRepository.findById(thirdGoal.getSecondGoal().getMandalart().getId())
+                .orElseThrow(() -> new MandalartException(MandalartExceptionType.NOT_FOUND_MANDALART));
+
+        // 기존 Goal 찾기
+        List<Goal> existingGoals = goalRepository.findAll().stream()
+                .filter(goal -> goal.getThirdGoal().getId().equals(request.getThirdGoalId()))
+                .toList();
+
+        if (existingGoals.isEmpty()) {
+            throw new GoalException(GoalExceptionType.NOT_FOUND_GOAL);
+        }
+
+        for (Goal goal : existingGoals) {
+            // 이름과 반복 주기 업데이트
+            goal.setName(request.getName());
+            goal.setRepetition(request.getRepetition());
+
+            // 기존 GoalDateMap 삭제
+            goalDateMapRepository.deleteAll(goal.getGoalDateMapList());
+
+            // 새로운 날짜로 GoalDateMap 재설정
+            List<GoalDateMap> newGoalDateMaps = request.getDates().stream()
+                    .map(date -> {
+                        GoalDate goalDate = goalDateRepository.findByUserAndDate(persistUser, date)
+                                .orElseGet(() -> goalDateRepository.save(new GoalDate(persistUser, date)));
+                        return goalDateMapRepository.save(new GoalDateMap(goal, goalDate, Status.NONE));
+                    }).toList();
+
+            goal.setGoalDateMapList(newGoalDateMaps);
+        }
     }
 
 

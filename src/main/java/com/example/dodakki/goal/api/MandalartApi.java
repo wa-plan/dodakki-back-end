@@ -104,4 +104,11 @@ public class MandalartApi {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/picture")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> updateMandalartPicture(@CurrentUser User user, @Valid @RequestBody MandalartPictureUpdateRequest request) {
+        mandalartService.updateMandalartPicture(user, request);
+        return ResponseEntity.noContent().build();
+    }
+
 }

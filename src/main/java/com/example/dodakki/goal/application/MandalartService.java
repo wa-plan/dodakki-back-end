@@ -201,4 +201,24 @@ public class MandalartService {
         }
     }
 
+    @Transactional
+    public void updateMandalartPicture(User user, MandalartPictureUpdateRequest request) {
+        User persistUser = userRepository.findById(user.getId())
+                .orElseThrow(() -> new UserException(UserExceptionType.NOT_FOUND_MEMBER));
+
+        Mandalart mandalart = mandalartRepository.findById(request.getMandalartId())
+                .orElseThrow(() -> new MandalartException(MandalartExceptionType.NOT_FOUND_MANDALART));
+
+        // 기존 사진 삭제
+        mandalart.getPhotoList().clear();
+        photoRepository.deleteAll(mandalart.getPhotoList());
+
+        // 새로운 사진 추가
+        for (String pictureUrl : request.getPictureUrls()) {
+            Photo newPhoto = new Photo(pictureUrl);
+            photoRepository.save(newPhoto);
+            mandalart.addPhoto(newPhoto);
+        }
+    }
+
 }

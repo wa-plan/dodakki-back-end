@@ -1,11 +1,7 @@
 package com.example.dodakki.goal.api;
 
 import com.example.dodakki.goal.application.GoalService;
-import com.example.dodakki.goal.application.dto.GoalAddRequest;
-import com.example.dodakki.goal.application.dto.GoalDateUpdateRequest;
-import com.example.dodakki.goal.application.dto.GoalResponse;
-import com.example.dodakki.goal.application.dto.GoalUpdateRequest;
-import com.example.dodakki.goal.application.dto.GoalUpdateStatusRequest;
+import com.example.dodakki.goal.application.dto.*;
 import com.example.dodakki.security.CurrentUser;
 import com.example.dodakki.user.domain.User;
 import jakarta.validation.Valid;
@@ -73,5 +69,33 @@ public class GoalApi {
         goalService.updateGoalDate(user, request);
         return ResponseEntity.noContent().build();
     }
+
+    @PutMapping("/domino-date")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> updateDominoGoalDate(
+            @CurrentUser User user,
+            @Valid @RequestBody GoalDominoDateUpdateRequest request) {
+        goalService.updateDominoGoalDate(user, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/delete-future-domino")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteFutureDominoGoals(
+            @CurrentUser User user,
+            @Valid @RequestBody GoalDominoDeleteRequest request) {
+        goalService.deleteFutureDominoGoals(user, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/full-update")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<Void> fullUpdateGoal(
+            @CurrentUser User user,
+            @Valid @RequestBody GoalFullUpdateRequest request) {
+        goalService.fullUpdateGoal(user, request);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }

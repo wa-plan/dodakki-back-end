@@ -16,4 +16,6 @@ public interface GoalDateMapRepository extends JpaRepository<GoalDateMap, Long> 
     Optional<Void> deleteByGoalAndGoalDate(Goal goal, GoalDate goalDate);
     Optional<GoalDateMap> findByGoalAndGoalDate(Goal goal, GoalDate goalDate);
     List<GoalDateMap> findByGoalAndAttainment(Goal goal, Status status);
+
+    List<GoalDateMap> findByGoal(Goal goal);
 }
