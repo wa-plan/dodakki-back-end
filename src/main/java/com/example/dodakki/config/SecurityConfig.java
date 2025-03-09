@@ -63,45 +63,49 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(withDefaults())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .csrf(csrf -> csrf.disable())
-            .formLogin(form -> form.disable())
-            .httpBasic(httpBasic -> httpBasic.disable())
-            .exceptionHandling(exception -> exception.authenticationEntryPoint(new RestAuthenticationEntryPoint()))
-            .authorizeHttpRequests(authorize -> authorize
-                //h2 설정
-//                .requestMatchers(PathRequest.toH2Console()).permitAll()
-                //.requestMatchers("/", "/error", "/favicon.ico", "/**/*.png", "/**/*.gif", "/**/*.svg", "/**/*.jpg", "/**/*.html", "/**/*.css", "/**/*.js").permitAll()
-                .requestMatchers("/swagger", "/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**", "/v3/api-docs/**").permitAll()
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/auth/**")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/signup")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/reset_password")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/find_userId")).permitAll()
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/user/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/user/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/mandalart/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/mandalart/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.PATCH, "/api/mandalart/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/secondgoal/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/secondgoal/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/secondgoal")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/thirdgoal/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/thirdgoal/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/thirdgoal/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.POST, "/api/goal/**")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/api/goal")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.POST, "/s3/upload")).hasRole("USER")
-                .requestMatchers(antMatcher(HttpMethod.GET, "/s3/delete")).hasRole("USER")
-                .anyRequest().authenticated()
-            );
+                .cors(withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(csrf -> csrf.disable())
+                .formLogin(form -> form.disable())
+                .httpBasic(httpBasic -> httpBasic.disable())
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(new RestAuthenticationEntryPoint()))
+                .authorizeHttpRequests(authorize -> authorize
+                                //h2 설정
+//            .requestMatchers(PathRequest.toH2Console()).permitAll()
+                                .requestMatchers("/swagger", "/swagger-ui.html", "/swagger-ui/**", "/api-docs", "/api-docs/**", "/v3/api-docs/**").permitAll()
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/auth/**")).permitAll()
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/signup")).permitAll()
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/reset_password")).permitAll()
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/find_userId")).permitAll()
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/user/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.GET, "/api/user/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/user/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/mandalart/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.GET, "/api/mandalart/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.PATCH, "/api/mandalart/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/secondgoal/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.GET, "/api/secondgoal/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/secondgoal")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.GET, "/api/thirdgoal/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/thirdgoal/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/thirdgoal/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/api/goal/**")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.GET, "/api/goal")).hasRole("USER")
+
+                                // 🔥 추가된 권한 설정
+                                .requestMatchers(antMatcher(HttpMethod.PUT, "/api/goal/full-update")).hasRole("USER")
+
+                                .requestMatchers(antMatcher(HttpMethod.POST, "/s3/upload")).hasRole("USER")
+                                .requestMatchers(antMatcher(HttpMethod.GET, "/s3/delete")).hasRole("USER")
+                                .anyRequest().authenticated()
+                );
 
         http.addFilterBefore(tokenAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(loginFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 
     private LoginFilter loginFilter() throws Exception {
         LoginFilter loginFilter = new LoginFilter();
