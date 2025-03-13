@@ -210,8 +210,15 @@ public class MandalartService {
                 .orElseThrow(() -> new MandalartException(MandalartExceptionType.NOT_FOUND_MANDALART));
 
         // 기존 사진 삭제
-        mandalart.getPhotoList().clear();
-        photoRepository.deleteAll(mandalart.getPhotoList());
+        List<Photo> existingPhotos = mandalart.getPhotoList();
+
+        // 기존 사진과 Mandalart의 연관 관계 먼저 제거
+        for (Photo photo : existingPhotos) {
+            photo.setMandalart(null);  // 연관 관계 제거
+        }
+
+        mandalart.getPhotoList().clear();  // 메모리에서 사진 리스트 초기화
+        photoRepository.deleteAll(existingPhotos);  // DB에서 기존 사진 삭제
 
         // 새로운 사진 추가
         for (String pictureUrl : request.getPictureUrls()) {
@@ -220,5 +227,8 @@ public class MandalartService {
             mandalart.addPhoto(newPhoto);
         }
     }
+
+}
+
 
 }
