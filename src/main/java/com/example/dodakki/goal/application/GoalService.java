@@ -100,20 +100,34 @@ public class GoalService {
         goalDateMapRepository.deleteByGoalAndGoalDate(goal, goalDate).orElseThrow(() -> new GoalDateMapException(
                 GoalDateMapExceptionType.NOT_FOUND_GOAL_DATE_MAP));
     }
-    public List<GoalResponse> getGoal(User user, LocalDate request){
+    public List<GoalResponse> getGoal(User user, LocalDate request) {
         User persistUser = userRepository.findById(user.getId()).orElseThrow(() -> new UserException(
                 UserExceptionType.NOT_FOUND_MEMBER));
         GoalDate goalDate = goalDateRepository.findByUserAndDate(persistUser, request).orElseThrow(() -> new GoalDateException(
                 GoalDateExceptionType.NOT_FOUND_GOAL_DATE));
         List<GoalDateMap> goalDateMap = goalDateMapRepository.findByGoalDate(goalDate);
+
         return goalDateMap.stream().map(
                 goalDateMap1 -> {
                     Goal goal = goalRepository.findById(goalDateMap1.getGoal().getId()).orElseThrow(() -> new GoalException(
-                        GoalExceptionType.NOT_FOUND_GOAL));
-                    return new GoalResponse(goal.getId(), goal.getName(), goal.getThirdGoal().getSecondGoal().getColor(), goal.getThirdGoal().getName(), goalDateMap1.getAttainment(), goal.getRepetition());
+                            GoalExceptionType.NOT_FOUND_GOAL));
+
+                    // NullPointerException 방지
+                    Long thirdGoalId = Optional.ofNullable(goal.getThirdGoal()).map(ThirdGoal::getId).orElse(null);
+
+                    return new GoalResponse(
+                            goal.getId(),
+                            thirdGoalId,
+                            goal.getName(),
+                            goal.getThirdGoal().getSecondGoal().getColor(),
+                            goal.getThirdGoal().getName(),
+                            goalDateMap1.getAttainment(),
+                            goal.getRepetition()
+                    );
                 }
         ).toList();
     }
+
 
     public void updateGoalDate(User user, GoalDateUpdateRequest request) {
         User persistUser = userRepository.findById(user.getId())

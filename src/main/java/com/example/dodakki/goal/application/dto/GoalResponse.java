@@ -13,9 +13,10 @@ import lombok.NoArgsConstructor;
 public class GoalResponse {
 
     private Long id;
+    private Long thirdGoalId;
     private String goalName;
     private String color;
-    private String thridGoal;
+    private String thirdGoal;
     private Status attainment;
     private Repetition repetition;
 
